@@ -2,6 +2,7 @@ const puppeteer = require('puppeteer');
 const express = require('express');
 const bodyParser = require('body-parser');
 const http = require('http');
+const https = require('https');
 const url = require('url');
 
 const app = express();
@@ -9,6 +10,32 @@ const port = 3000;
 
 app.use(bodyParser.json());
 app.use(express.static('public'));
+
+// プロキシサーバーの設定
+app.use('/proxy', (req, res) => {
+    const targetUrl = req.query.url;
+    const parsedUrl = url.parse(targetUrl);
+    const isHttps = parsedUrl.protocol === 'https:';
+    
+    const options = {
+        hostname: parsedUrl.hostname,
+        port: parsedUrl.port || (isHttps ? 443 : 80),
+        path: parsedUrl.path,
+        method: req.method,
+        headers: req.headers
+    };
+
+    const proxyRequest = (isHttps ? https : http).request(options, (proxyResponse) => {
+        res.writeHead(proxyResponse.statusCode, proxyResponse.headers);
+        proxyResponse.pipe(res, { end: true });
+    });
+
+    req.pipe(proxyRequest, { end: true });
+    proxyRequest.on('error', (e) => {
+        console.error(e);
+        res.status(500).send('Proxy error');
+    });
+});
 
 app.post('/fetch', async (req, res) => {
     const { targetUrl } = req.body;
@@ -21,7 +48,18 @@ app.post('/fetch', async (req, res) => {
         const page = await browser.newPage();
         await page.goto(targetUrl);
 
-        const content = await page.content();
+        // ページのコンテンツを取得
+        let content = await page.content();
+
+        // HTMLのリンクやリソースをプロキシ経由に書き換え
+        content = content.replace(/(href|src)=["'](.*?)["']/g, (match, p1, p2) => {
+            if (p2.startsWith('http')) {
+                return `${p1}="/proxy?url=${encodeURIComponent(p2)}"`;
+            } else {
+                return `${p1}="${p2}"`;
+            }
+        });
+
         await browser.close();
 
         res.send(content);
@@ -29,31 +67,6 @@ app.post('/fetch', async (req, res) => {
         console.error(error);
         res.status(500).send('Error fetching the page');
     }
-});
-
-// プロキシサーバーの設定
-app.use('/proxy', (req, res) => {
-    const targetUrl = req.query.url;
-    const parsedUrl = url.parse(targetUrl);
-    
-    const options = {
-        hostname: parsedUrl.hostname,
-        port: parsedUrl.port,
-        path: parsedUrl.path,
-        method: req.method,
-        headers: req.headers
-    };
-
-    const proxyRequest = http.request(options, (proxyResponse) => {
-        res.writeHead(proxyResponse.statusCode, proxyResponse.headers);
-        proxyResponse.pipe(res, { end: true });
-    });
-
-    req.pipe(proxyRequest, { end: true });
-    proxyRequest.on('error', (e) => {
-        console.error(e);
-        res.status(500).send('Proxy error');
-    });
 });
 
 app.listen(port, () => {

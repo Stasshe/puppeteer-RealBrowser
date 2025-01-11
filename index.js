@@ -48,16 +48,24 @@ app.post('/fetch', async (req, res) => {
         const page = await browser.newPage();
         await page.goto(targetUrl);
 
+        // ターゲットURLのホスト名を取得
+        const targetHost = new URL(targetUrl).hostname;
+
         // ページのコンテンツを取得
         let content = await page.content();
 
         // HTMLのリンクやリソースをプロキシ経由に書き換え
         content = content.replace(/(href|src)=["'](.*?)["']/g, (match, p1, p2) => {
-            if (p2.startsWith('http')) {
-                return `${p1}="/proxy?url=${encodeURIComponent(p2)}"`;
-            } else {
-                return `${p1}="${p2}"`;
+            try {
+                const resourceUrl = new URL(p2, targetUrl);
+                if (resourceUrl.hostname === targetHost) {
+                    return `${p1}="/proxy?url=${encodeURIComponent(resourceUrl.href)}"`;
+                }
+            } catch (e) {
+                // URLの解析に失敗した場合は無視する
+                return match;
             }
+            return match;
         });
 
         await browser.close();

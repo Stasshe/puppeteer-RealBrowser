@@ -36,7 +36,8 @@ app.get('/fetch', async (req, res) => {
             let url = $(element).attr(attr);
 
             // URLが相対参照の場合は絶対URLに変換
-            if (url && !url.startsWith('http://') && !url.startsWith('https://')) {
+            if (url && !url.startsWith('http://') && !url.starts
+            // With('https://')) {
                 url = new URL(url, baseUrl).href;
             }
 

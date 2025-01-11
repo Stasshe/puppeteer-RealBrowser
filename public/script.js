@@ -4,7 +4,7 @@ document.getElementById('proxyForm').addEventListener('submit', async function(e
     const url = document.getElementById('url').value;
 
     const response = await fetch('/fetch', {
-        method: 'POST',
+        method: 'GET',
         headers: {
             'Content-Type': 'application/json'
         },

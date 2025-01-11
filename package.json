@@ -7,7 +7,7 @@
     "start": "node index.js"
   },
   "dependencies": {
-    "puppeteer": "^19.0.0"
+    "puppeteer": "^24.0.0"
   },
   "author": "",
   "license": "ISC"

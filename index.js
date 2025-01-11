@@ -1,15 +1,34 @@
 const puppeteer = require('puppeteer');
+const express = require('express');
+const bodyParser = require('body-parser');
 
-(async () => {
-    const browser = await puppeteer.launch({
-        headless: false,
-        args: ['--proxy-server=プロキシサーバーのアドレス']
-    });
+const app = express();
+const port = 3000;
 
-    const page = await browser.newPage();
-    await page.goto('https://example.com');
+app.use(bodyParser.json());
+app.use(express.static('public'));
 
-    // 追加の操作をここに記述
-    
-    await browser.close();
-})();
+app.post('/fetch', async (req, res) => {
+    const { url } = req.body;
+
+    try {
+        const browser = await puppeteer.launch({
+            headless: true,
+            args: ['--proxy-server=プロキシサーバーのアドレス']
+        });
+
+        const page = await browser.newPage();
+        await page.goto(url);
+
+        const content = await page.content();
+        await browser.close();
+
+        res.send(content);
+    } catch (error) {
+        res.status(500).send('Error fetching the page');
+    }
+});
+
+app.listen(port, () => {
+    console.log(`Server is running at http://localhost:${port}`);
+});

@@ -2,14 +2,8 @@ document.getElementById('proxyForm').addEventListener('submit', async function(e
     event.preventDefault();
     const url = document.getElementById('url').value;
 
-    const response = await fetch('/fetch', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ url })
-    });
+    const response = await fetch('/proxy?url=' + encodeURIComponent(url));
 
     const result = await response.text();
-    document.getElementById('result').textContent = result;
+    document.getElementById('result').srcdoc = result;
 });

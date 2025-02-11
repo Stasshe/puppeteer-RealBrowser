@@ -1,18 +1,10 @@
-# Dockerfile
+#FROM selenium/standalone-chrome
 
-FROM mcr.microsoft.com/vscode/devcontainers/base:ubuntu
+# Dockerfile for Selenium Grid Hub
+FROM selenium/hub
+EXPOSE 4444
 
-# Install Chrome and dependencies
-RUN apt-get update && apt-get install -y wget gnupg2
-RUN wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | apt-key add -
-RUN sh -c 'echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google-chrome.list'
-RUN apt-get update && apt-get install -y google-chrome-stable
 
-# Install Chromedriver
-RUN wget -O /tmp/chromedriver.zip https://chromedriver.storage.googleapis.com/$(wget -q -O - https://chromedriver.storage.googleapis.com/LATEST_RELEASE)/chromedriver_linux64.zip
-RUN unzip /tmp/chromedriver.zip chromedriver -d /usr/local/bin/
-
-# Install Python and dependencies
-RUN apt-get update && apt-get install -y python3 python3-pip
-COPY requirements.txt .
-RUN pip3 install -r requirements.txt
+# Dockerfile for Selenium Node Chrome
+FROM selenium/node-chrome
+EXPOSE 5555
